@@ -289,7 +289,13 @@ namespace Board
 			}
 		}
 
-		if (EvaluateFast(*this) != Evaluate(*this) || GetZorbist() != ZorbistKey(*this))
+		if (EvaluateFast(*this) != Evaluate(*this))
+		{
+			std::cout << ToString();
+			return false;
+		}
+
+		if (GetZorbist() != ZorbistKey(*this))
 			return false;
 
 		return true;
@@ -333,14 +339,6 @@ namespace Board
 	int Board::GetEval() const
 	{
 		return m_Eval;
-		/*if (m_color_to_move == WHITE)
-		{
-			return m_Eval;
-		}
-		else
-		{
-			return -m_Eval;
-		}*/
 	}
 
 	uint64_t Board::GetZorbist() const

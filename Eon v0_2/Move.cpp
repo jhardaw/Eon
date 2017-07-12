@@ -92,6 +92,23 @@ namespace Board
 		return lfalgebra;
 	}
 
+	std::string Move::ToVerboseString()
+	{
+		std::string lfalgebra = std::string(translate(GetFrom())) + std::string(translate(GetTo()));
+		if (GetFlags() & QUEEN_PROMOTION)
+			lfalgebra += "=q";
+		else if (GetFlags()&ROOK_PROMOTION)
+			lfalgebra += "r";
+		else if (GetFlags()&BISHOP_PROMOTION)
+			lfalgebra += "b";
+		else if (GetFlags()&KNIGHT_PROMOTION)
+			lfalgebra += "n";
+		//if (GetCaptured() != EMPTY)
+		lfalgebra += "x" + PIECENAMES[GetCaptured()];
+
+		return lfalgebra;
+	}
+
 	//bool Move::Validate(Board::Board &board)
 	//{
 	//	if (GetFrom() < A1 || GetFrom() > H8)

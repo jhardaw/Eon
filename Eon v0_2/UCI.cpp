@@ -200,12 +200,18 @@ namespace UCI
 			split(line.substr(line.find("moves") + 6), ' ', tokens);
 			for (int ii = 0; ii < tokens.size(); ii++)
 			{
+				Board::MoveList list(*m_board);
 				Board::ESquare from = Board::translate(tokens[ii].substr(0,2));
 				Board::ESquare to = Board::translate(tokens[ii].substr(2,2));
-				Board::MoveFlags flags = Board::MoveFlags::NO_FLAGS;
-				Board::EPiece captured = m_board->PieceAt(to);
-				std::cout << tokens[ii] << "\t" << tokens[ii].substr(0,2) << "\t" << tokens[ii].substr(2,2) << std::endl;
-				m_board->MakeMove(Board::Move(from, to, flags, captured));
+				Board::GenerateLegalMoves(*m_board, list);
+				for (int jj = 0; jj < list.GetLength(); jj++)
+				{
+					Board::Move move = list.GetMove(jj);
+					if (from == move.GetFrom() && to == move.GetTo())
+					{
+						m_board->MakeMove(move);
+					}
+				}
 			}
 		}
 	}

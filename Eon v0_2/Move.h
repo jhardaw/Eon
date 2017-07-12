@@ -123,6 +123,7 @@ namespace Board
 			return m_move;
 		}
 		std::string ToString();
+		std::string Move::ToVerboseString();
 
 	private:
 		uint32_t m_move;

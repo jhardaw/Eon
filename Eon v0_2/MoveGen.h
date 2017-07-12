@@ -18,4 +18,5 @@ namespace Board
 	void GeneratePseudoLegalMoves(Board &board, MoveList &list);
 	void GenerateLegalMoves(Board &board, MoveList &list);
 	void GenerateTacticalMoves(Board &board, MoveList &list);
+	void GenerateQuietMoves(Board &board, MoveList &list);
 }

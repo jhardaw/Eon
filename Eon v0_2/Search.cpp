@@ -41,34 +41,36 @@ namespace Search
 
 	void AnalyzeBoard(Board::Board &board, int depth)
 	{
-		Board::MoveList moveList;
+		Board::MoveList moveList(board);
 		Board::GeneratePseudoLegalMoves(board, moveList);
 		for (int ii = 0; ii < moveList.GetLength(); ii++)
 		{
-			board.MakeMove(moveList.GetMove(ii));
+			Board::Move move = moveList.GetMove(ii);
+			board.MakeMove(move);
 			int score = -AlphaBeta(board, -INFINITEVAL, INFINITEVAL, depth - 1);
-			std::cout << "Move: " << moveList.GetMove(ii).ToString() << "\tScore: " << score << std::endl;
-			board.UnmakeMove(moveList.GetMove(ii));
+			std::cout << "Move: " << move.ToString() << "\tScore: " << score << std::endl;
+			board.UnmakeMove(move);
 		}
 	}
 
 	// Basic find best move using AlphaBeta
 	extern Board::Move BasicExtractPV(Board::Board& board, int depth)
 	{
-		Board::MoveList moveList;
+		Board::MoveList moveList(board);
 		Board::GeneratePseudoLegalMoves(board, moveList);
 		Board::Move bestMove;
 		stats_nodes = 0;
 		stats_score = INFINITEVAL;
 		for (int ii = 0; ii < moveList.GetLength(); ii++)
 		{
-			board.MakeMove(moveList.GetMove(ii));
+			Board::Move move = moveList.GetMove(ii);
+			board.MakeMove(move);
 			int score = AlphaBeta(board, -INFINITEVAL, INFINITEVAL, depth - 1);
-			board.UnmakeMove(moveList.GetMove(ii));
+			board.UnmakeMove(move);
 			if (score < stats_score)
 			{
 				stats_score = score;
-				bestMove = moveList.GetMove(ii);
+				bestMove = move;
 			}
 		}
 
@@ -81,17 +83,19 @@ namespace Search
 
 		if (depthleft == 0)
 		{
-			value = Quiescene(board, alpha, beta, 0);//EvaluateFast(board);//
+			value = EvaluateFast(board);//Quiescene(board, alpha, beta, 0);//
 			return value;
 		}
 
-		Board::MoveList moveList;
+		Board::MoveList moveList(board);
 		Board::GeneratePseudoLegalMoves(board, moveList);
 		for (int ii = 0; ii < moveList.GetLength(); ii++)
 		{
-			board.MakeMove(moveList.GetMove(ii));
+			Board::Move move = moveList.GetMove(ii);
+			board.MakeMove(move);
 			value = -AlphaBeta(board, -beta, -alpha, depthleft - 1);
-			board.UnmakeMove(moveList.GetMove(ii));
+			board.UnmakeMove(move);
+
 			if (value >= beta)
 			{
 				return beta;   //  fail hard beta-cutoff
@@ -113,14 +117,15 @@ namespace Search
 		if (val > alpha)
 			alpha = val;
 
-		Board::MoveList moveList;
+		Board::MoveList moveList(board);
 		Board::GeneratePseudoLegalMoves(board, moveList);
-		//moveList.OnlyGoodCaptures();
+
 		for (int ii = 0; ii < moveList.GetLength(); ii++)
 		{
-			board.MakeMove(moveList.GetMove(ii));
+			Board::Move move = moveList.GetMove(ii);
+			board.MakeMove(move);
 			val = -Quiescene(board, -beta, -alpha, depth+1);
-			board.UnmakeMove(moveList.GetMove(ii));
+			board.UnmakeMove(move);
 			if (val >= beta)
 				return beta;
 			if (val > alpha)
