@@ -15,29 +15,29 @@
 namespace Board
 {
 	// Castling rights
-	enum ECastleRights : uint8_t { CASTLE_NONE = 0x00, BLACK_KING = 0x01, BLACK_QUEEN = 0x02, WHITE_KING = 0x04, WHITE_QUEEN = 0x08 };
+	enum ECastleRight : uint8_t { CASTLE_NONE = 0x00, CASTLE_BLACK_KING = 0x01, CASTLE_BLACK_QUEEN = 0x02, CASTLE_WHITE_KING = 0x04, CASTLE_WHITE_QUEEN = 0x08 };
 
-	inline ECastleRights operator |(ECastleRights a, ECastleRights b)
+	inline ECastleRight operator |(ECastleRight a, ECastleRight b)
 	{
-		return static_cast<ECastleRights>(static_cast<int>(a) | static_cast<int>(b));
+		return static_cast<ECastleRight>(static_cast<int>(a) | static_cast<int>(b));
 	}
 
-	inline ECastleRights operator &(ECastleRights a, ECastleRights b)
+	inline ECastleRight operator &(ECastleRight a, ECastleRight b)
 	{
-		return static_cast<ECastleRights>(static_cast<int>(a) & static_cast<int>(b));
+		return static_cast<ECastleRight>(static_cast<int>(a) & static_cast<int>(b));
 	}
 
-	inline ECastleRights operator ~(ECastleRights a)
+	inline ECastleRight operator ~(ECastleRight a)
 	{
-		return static_cast<ECastleRights>(~static_cast<int>(a));
+		return static_cast<ECastleRight>(~static_cast<int>(a));
 	}
 
-	inline ECastleRights& operator &=(ECastleRights &a, ECastleRights b)
+	inline ECastleRight& operator &=(ECastleRight &a, ECastleRight b)
 	{
 		return a = a & b;
 	}
 
-	inline ECastleRights& operator |=(ECastleRights &a, ECastleRights b)
+	inline ECastleRight& operator |=(ECastleRight &a, ECastleRight b)
 	{
 		return a = a | b;
 	}
@@ -50,15 +50,22 @@ namespace Board
 	class UndoHelper
 	{
 	public:
-		UndoHelper(uint8_t half_move_count, ECastleRights castling_rights, ESquare ep_square);
+		UndoHelper(uint8_t half_move_count, ECastleRight castling_rights, ESquare ep_square);
 		uint8_t GetHalfMoveCount();
-		ECastleRights GetCastlingRights();
+		ECastleRight GetCastlingRights();
 		ESquare GetEPSquare();
 
 	private:
 		uint8_t m_half_move_count;
-		ECastleRights m_castling_rights;
+		ECastleRight m_castling_rights;
 		ESquare m_ep_square;
+	};
+
+	struct UndoHelper2
+	{
+		uint8_t half_move_count;
+		ECastleRight castling_rights;
+		ESquare ep_square;
 	};
 
 	class Board
@@ -66,8 +73,8 @@ namespace Board
 	public:
 		Board();
 
-		void MakeMove(Move &move);
-		void UnmakeMove(Move &move);
+		void MakeMove(Move move);
+		void UnmakeMove(Move move);
 		void ParseFEN(std::string &FEN);
 
 		EPiece PieceAt(ESquare sqr) const;
@@ -75,7 +82,7 @@ namespace Board
 		bitboard_t GetBitboard(int index) const;
 		EColor GetPlayersTurn() const;
 		uint8_t GetHalfMoveCount() const;
-		ECastleRights GetCastlingRights() const;
+		ECastleRight GetCastlingRights() const;
 		ESquare GetEPSquare() const;
 		int GetEval() const;
 		uint64_t GetZorbist() const;
@@ -95,10 +102,13 @@ namespace Board
 		EPiece m_board_array[64];
 		int m_move_count;
 		uint8_t m_half_move_count;
-		ECastleRights m_castling_rights;
+		ECastleRight m_castling_rights;
 		ESquare m_ep_square;
 		EColor m_ToMove;
 		int m_Eval; // Incrementally updated MB + Positional
 		uint64_t m_Zorbist; // Incrementally updated zorbist key for transposition table
+
+		//UndoHelper2 m_UndoStack[256];
+		//int m_StackIndex;
 	};
 }

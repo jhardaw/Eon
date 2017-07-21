@@ -114,7 +114,7 @@ namespace UCI
 				split(line, ' ', tokens);
 				Board::ESquare from = Board::translate(tokens[1]);
 				Board::ESquare to = Board::translate(tokens[1]);
-				Board::MoveFlags flags = Board::MoveFlags::NO_FLAGS;
+				Board::EMoveFlag flags = Board::EMoveFlag::NO_FLAGS;
 				Board::EPiece captured = m_board->PieceAt(to);
 				m_board->UnmakeMove(Board::Move(from, to, flags, captured));
 			}
@@ -124,7 +124,7 @@ namespace UCI
 				split(line, ' ', tokens);
 				Board::ESquare from = Board::translate(tokens[1]);
 				Board::ESquare to = Board::translate(tokens[1]);
-				Board::MoveFlags flags = Board::MoveFlags::NO_FLAGS;
+				Board::EMoveFlag flags = Board::EMoveFlag::NO_FLAGS;
 				Board::EPiece captured = m_board->PieceAt(to);
 				m_board->MakeMove(Board::Move(from, to, flags, captured));
 			}
@@ -232,7 +232,8 @@ namespace UCI
 		{
 			std::vector<std::string> tokens;
 			split(line, ' ', tokens);
-			int bTime, wTime;
+			int bTime = 0;
+			int wTime = 0;
 			for (int ii = 0; ii < tokens.size(); ii++)
 			{
 				if (tokens[ii].compare("wtime") == 0)

@@ -16,14 +16,12 @@
 namespace Board
 {
 	bitboard_t AllAttacks(Board &board, EColor color);
-	//void Serialize(MoveList &list, Board &board, ESquare from, bitboard_t moves);
-	//void Serialize_Pawns(MoveList &list, Board &board, bitboard_t moves, int diff, MoveFlags flag);
 	void add_queen_moves(MoveList &list, bitboard_t queens, bitboard_t friendly, bitboard_t occupied);
 	void add_rook_moves(MoveList &list, bitboard_t rooks, bitboard_t friendly, bitboard_t occupied);
 	void add_bishop_moves(MoveList &list, bitboard_t bishops, bitboard_t friendly, bitboard_t occupied);
-	void add_king_moves(MoveList &list, bitboard_t kings, bitboard_t friendly, bitboard_t occupied);
-	void add_castle_moves(MoveList &list, Board &board, bitboard_t king, bitboard_t occupied);
-	void add_knight_moves(MoveList &list, bitboard_t knights, bitboard_t friendly, bitboard_t occupied);
+	void add_king_moves(MoveList &list, bitboard_t kings, bitboard_t friendly);
+	void add_castle_moves(MoveList &list, Board &board, bitboard_t occupied);
+	void add_knight_moves(MoveList &list, bitboard_t knights, bitboard_t friendly);
 	void add_pawn_pushes(MoveList &list, bitboard_t pawns, bitboard_t occupied, EColor toMove);
 	void add_pawn_attacks(MoveList &list, bitboard_t pawns, bitboard_t oponent, EColor toMove);
 	void add_pawn_enpassant(MoveList &list, bitboard_t pawns, bitboard_t ep_sqr, EColor toMove);
@@ -46,7 +44,7 @@ namespace Board
 	bitboard_t antidiaganal_attacks(bitboard_t o, int from);
 	bitboard_t rankAttacks(bitboard_t o, int from);
 
-	bitboard_t fileAt[64] = {	FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
+	const bitboard_t fileAt[64] = {	FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
@@ -54,7 +52,7 @@ namespace Board
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 								FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
-	bitboard_t rowAt[64] = {	ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1,
+	const bitboard_t rowAt[64] = {	ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1, ROW_1,
 								ROW_2, ROW_2, ROW_2, ROW_2, ROW_2, ROW_2, ROW_2, ROW_2,
 								ROW_3, ROW_3, ROW_3, ROW_3, ROW_3, ROW_3, ROW_3, ROW_3,
 								ROW_4, ROW_4, ROW_4, ROW_4, ROW_4, ROW_4, ROW_4, ROW_4,
@@ -66,15 +64,15 @@ namespace Board
 	bitboard_t antidiagAt[64];
 	uint8_t arrFirstRankAttacks64x8[64 * 8];
 
-	const bitboard_t EMPTY_CASTLE_BLACK_KING = 0x6000000000000000ULL;
-	const bitboard_t EMPTY_CASTLE_BLACK_QUEEN = 0x0E00000000000000ULL;
-	const bitboard_t EMPTY_CASTLE_WHITE_KING = 0x60ULL;
-	const bitboard_t EMPTY_CASTLE_WHITE_QUEEN = 0x0EULL;
+	const bitboard_t EMPTY_CASTLE_BLACK_KING =  bitAt[F8] | bitAt[G8];				//0x6000000000000000ULL;	//
+	const bitboard_t EMPTY_CASTLE_BLACK_QUEEN = bitAt[B8] | bitAt[C8] | bitAt[D8];	//0x0E00000000000000ULL;	//
+	const bitboard_t EMPTY_CASTLE_WHITE_KING =  bitAt[F1] | bitAt[G1];				// 0x60ULL;				// 
+	const bitboard_t EMPTY_CASTLE_WHITE_QUEEN = bitAt[B1] | bitAt[C1] | bitAt[D1];	//0x0EULL;				//
 
-	const bitboard_t CASTLE_BLACK_KING_THRU = 0x6000000000000000ULL;
-	const bitboard_t CASTLE_BLACK_QUEEN_THRU = 0x0C00000000000000ULL;
-	const bitboard_t CASTLE_WHITE_KING_THRU = 0x60ULL;
-	const bitboard_t CASTLE_WHITE_QUEEN_THRU = 0x0CULL;
+	const bitboard_t CASTLE_BLACK_KING_THRU =  bitAt[E8] | bitAt[F8] | bitAt[G8]; //0x7000000000000000ULL;	//
+	const bitboard_t CASTLE_BLACK_QUEEN_THRU = bitAt[C8] | bitAt[D8] | bitAt[E8]; //0x1C00000000000000ULL;	//
+	const bitboard_t CASTLE_WHITE_KING_THRU =  bitAt[E1] | bitAt[F1] | bitAt[G1]; //0x70ULL;					//
+	const bitboard_t CASTLE_WHITE_QUEEN_THRU = bitAt[C1] | bitAt[D1] | bitAt[E1]; //0x1CULL;					//
 
 	bitboard_t knight_moves_table[64];
 	bitboard_t king_moves_table[64];
@@ -82,8 +80,6 @@ namespace Board
 	// Initilize lookup tables used by MoveGen
 	extern void MoveGen_Init(void)
 	{
-		Bitboard_Init();
-
 		// Fill knight_moves lookup table
 		int knight_diff[8] = { 15, 17, 6, 10, -15, -17, -6, -10 };
 		for (ESquare ii = A1; ii <= H8; ii++)
@@ -117,7 +113,7 @@ namespace Board
 		HyperbolaQuintessence_Init();
 	}
 
-	// Check if color is in check
+	// Check if color's king is being attacked
 	bool inCheck(Board &board, EColor color)
 	{
 		bitboard_t occupied = board.GetBitboard(WHITE) | board.GetBitboard(BLACK);
@@ -125,16 +121,21 @@ namespace Board
 		ESquare from = static_cast<ESquare>(bit_scan_forward(king));
 		bitboard_t bishopMoves = bishop_moves(from, occupied);
 		bitboard_t rookMoves = rook_moves(from, occupied);
-
-
+		
 		bitboard_t bishops = board.GetBitboard((!color) | BISHOP);
 		bitboard_t rooks = board.GetBitboard((!color) | ROOK);
 		bitboard_t queens = board.GetBitboard((!color) | QUEEN);
 		bitboard_t BoQAttacks = (bishopMoves & (bishops | queens));
 		bitboard_t RoQAttacks = (rookMoves & (rooks | queens));
 
+		if ((BoQAttacks | RoQAttacks) != BITBOARD_EMPTY)
+			return true;
+
 		bitboard_t NAttacks = knight_moves(from) & board.GetBitboard((!color) | KNIGHT);
 		bitboard_t KAttacks = king_moves(from) & board.GetBitboard((!color) | KING);
+
+		if ((NAttacks | KAttacks) != BITBOARD_EMPTY)
+			return true;
 
 		// Lastly pawn attacks
 		bitboard_t PAttacks = BITBOARD_EMPTY;
@@ -150,7 +151,7 @@ namespace Board
 		}
 		PAttacks &= board.GetBitboard((!color) | PAWN);
 
-		return (BoQAttacks | RoQAttacks | NAttacks | KAttacks | PAttacks) != BITBOARD_EMPTY;
+		return PAttacks != BITBOARD_EMPTY;
 	}
 
 	// Generate list of pseudo legal Chess moves, ignores leaving own King in check
@@ -161,14 +162,14 @@ namespace Board
 		bitboard_t oponent = board.GetBitboard(!toMove);
 		bitboard_t occupied = friendly | oponent;
 
-		add_knight_moves(list, board.GetBitboard(toMove|KNIGHT), friendly, occupied);
+		add_knight_moves(list, board.GetBitboard(toMove|KNIGHT), friendly);
 		add_bishop_moves(list, board.GetBitboard(toMove | BISHOP), friendly, occupied);
 		add_pawn_attacks(list, board.GetBitboard(toMove | PAWN), oponent, toMove);
 		add_pawn_pushes(list, board.GetBitboard(toMove | PAWN), occupied, toMove);
 		add_rook_moves(list, board.GetBitboard(toMove | ROOK), friendly, occupied);
 		add_queen_moves(list, board.GetBitboard(toMove | QUEEN), friendly, occupied);
-		add_king_moves(list, board.GetBitboard(toMove | KING), friendly, occupied);
-		add_castle_moves(list, board, board.GetBitboard(toMove | KING), occupied);
+		add_king_moves(list, board.GetBitboard(toMove | KING), friendly);
+		add_castle_moves(list, board, occupied);
 		add_pawn_enpassant(list, board.GetBitboard(toMove | PAWN), bitAt[board.GetEPSquare()], toMove);
 	}
 
@@ -208,12 +209,12 @@ namespace Board
 		bitboard_t friendly = ~oponent; // Trick pieces into only capturing
 		bitboard_t occupied = board.GetBitboard(toMove) | oponent;
 
-		add_knight_moves(list, board.GetBitboard(toMove | KNIGHT), friendly, occupied);
+		add_knight_moves(list, board.GetBitboard(toMove | KNIGHT), friendly);
 		add_bishop_moves(list, board.GetBitboard(toMove | BISHOP), friendly, occupied);
 		add_pawn_attacks(list, board.GetBitboard(toMove | PAWN), oponent, toMove);
 		add_rook_moves(list, board.GetBitboard(toMove | ROOK), friendly, occupied);
 		add_queen_moves(list, board.GetBitboard(toMove | QUEEN), friendly, occupied);
-		add_king_moves(list, board.GetBitboard(toMove | KING), friendly, occupied);
+		add_king_moves(list, board.GetBitboard(toMove | KING), friendly);
 	}
 
 	// TODO: Generate list of quiet moves
@@ -224,36 +225,13 @@ namespace Board
 		bitboard_t friendly = ~oponent; // Trick pieces into only capturing
 		bitboard_t occupied = board.GetBitboard(toMove) | oponent;
 
-		add_knight_moves(list, board.GetBitboard(toMove | KNIGHT), friendly, occupied);
+		add_knight_moves(list, board.GetBitboard(toMove | KNIGHT), friendly);
 		add_bishop_moves(list, board.GetBitboard(toMove | BISHOP), friendly, occupied);
 		add_pawn_attacks(list, board.GetBitboard(toMove | PAWN), oponent, toMove);
 		add_rook_moves(list, board.GetBitboard(toMove | ROOK), friendly, occupied);
 		add_queen_moves(list, board.GetBitboard(toMove | QUEEN), friendly, occupied);
-		add_king_moves(list, board.GetBitboard(toMove | KING), friendly, occupied);
+		add_king_moves(list, board.GetBitboard(toMove | KING), friendly);
 	}
-
-	//void Serialize(MoveList &list, Board &board, ESquare from, bitboard_t moves)
-	//{
-	//	while (moves != 0)
-	//	{
-	//		ESquare to = static_cast<ESquare>(bit_scan_forward(moves));
-	//		uint8_t score = KING + GetType(board.PieceAt(to)) - GetType(board.PieceAt(from)); // MVV/LVA
-	//		list.AddMove(Move(from, to, NO_FLAGS, board.PieceAt(to), score));
-	//		moves &= moves - 1;
-	//	}
-	//}
-
-	//void Serialize_Pawns(MoveList &list, Board &board, bitboard_t moves, int diff, MoveFlags flag)
-	//{
-	//	while (moves != 0)
-	//	{
-	//		ESquare to = static_cast<ESquare>(bit_scan_forward(moves));
-	//		ESquare from = to - diff;
-	//		uint8_t score = KING + GetType(board.PieceAt(to)) - GetType(board.PieceAt(from));
-	//		list.AddMove(Move(from, to, flag, board.PieceAt(to), score));
-	//		moves &= moves - 1;
-	//	}
-	//}
 
 	void add_queen_moves(MoveList &list, bitboard_t queens, bitboard_t friendly, bitboard_t occupied)
 	{
@@ -288,7 +266,7 @@ namespace Board
 		}
 	}
 
-	void add_king_moves(MoveList &list, bitboard_t king, bitboard_t friendly, bitboard_t occupied)
+	void add_king_moves(MoveList &list, bitboard_t king, bitboard_t friendly)
 	{
 		if (king != 0)
 		{
@@ -298,31 +276,31 @@ namespace Board
 		}
 	}
 
-	void add_castle_moves(MoveList &list, Board &board, bitboard_t king, bitboard_t occupied)
+	void add_castle_moves(MoveList &list, Board &board, bitboard_t occupied)
 	{
-		ECastleRights castling_rights = board.GetCastlingRights();
+		ECastleRight castling_rights = board.GetCastlingRights();
 		if (castling_rights)
 		{
 			EColor toMove = board.GetPlayersTurn();
 			bitboard_t attacks = AllAttacks(board, !toMove);
-			if (toMove == BLACK && !(bitAt[60] & attacks))
+			if (toMove == BLACK)// &&) !(bitAt[E8] & attacks))
 			{
-				if (castling_rights&BLACK_KING && !(EMPTY_CASTLE_BLACK_KING&occupied) && !(CASTLE_BLACK_KING_THRU&attacks))
+				if (castling_rights&CASTLE_BLACK_KING && !(EMPTY_CASTLE_BLACK_KING&occupied) && !(CASTLE_BLACK_KING_THRU&attacks))
 				{
 					list.AddMove(Move(E8, G8, CASTLE, WHITE | EMPTY));
 				}
-				if (castling_rights&BLACK_QUEEN && !(EMPTY_CASTLE_BLACK_QUEEN&occupied) && !(CASTLE_BLACK_QUEEN_THRU&attacks))
+				if (castling_rights&CASTLE_BLACK_QUEEN && !(EMPTY_CASTLE_BLACK_QUEEN&occupied) && !(CASTLE_BLACK_QUEEN_THRU&attacks))
 				{
 					list.AddMove(Move(E8, C8, CASTLE, WHITE | EMPTY));
 				}
 			}
-			else if (toMove == WHITE && !(bitAt[4] & attacks))
+			else //if (toMove == WHITE) && !(bitAt[E1] & attacks))
 			{
-				if (castling_rights&WHITE_KING && !(EMPTY_CASTLE_WHITE_KING&occupied) && !(CASTLE_WHITE_KING_THRU&attacks))
+				if (castling_rights&CASTLE_WHITE_KING && !(EMPTY_CASTLE_WHITE_KING&occupied) && !(CASTLE_WHITE_KING_THRU&attacks))
 				{
 					list.AddMove(Move(E1, G1, CASTLE, WHITE | EMPTY));
 				}
-				if (castling_rights&WHITE_QUEEN && !(EMPTY_CASTLE_WHITE_QUEEN&occupied) && !(CASTLE_WHITE_QUEEN_THRU&attacks))
+				if (castling_rights&CASTLE_WHITE_QUEEN && !(EMPTY_CASTLE_WHITE_QUEEN&occupied) && !(CASTLE_WHITE_QUEEN_THRU&attacks))
 				{
 					list.AddMove(Move(E1, C1, CASTLE, WHITE | EMPTY));
 				}
@@ -330,7 +308,7 @@ namespace Board
 		}
 	}
 
-	void add_knight_moves(MoveList &list, bitboard_t knights, bitboard_t friendly, bitboard_t occupied)
+	void add_knight_moves(MoveList &list, bitboard_t knights, bitboard_t friendly)
 	{
 		while (knights != 0)
 		{
@@ -352,8 +330,6 @@ namespace Board
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, ROOK_PROMOTION);
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, BISHOP_PROMOTION);
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, KNIGHT_PROMOTION);
-		// Add En Passant capture
-		//list.Serialize_Pawns(targets & bitAt[board.GetEPSquare()], diff, EP_CAPTURE);
 
 		targets = pawn_Rattacks(pawns, toMove);
 		diff = 7 - 16 * toMove;
@@ -362,7 +338,6 @@ namespace Board
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, ROOK_PROMOTION);
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, BISHOP_PROMOTION);
 		list.Serialize_Pawns(targets & oponent & (ROW_8 | ROW_1), diff, KNIGHT_PROMOTION);
-		//list.Serialize_Pawns(targets & bitAt[board.GetEPSquare()], diff, EP_CAPTURE);
 	}
 
 	void add_pawn_enpassant(MoveList &list, bitboard_t pawns, bitboard_t ep_sqr, EColor toMove)

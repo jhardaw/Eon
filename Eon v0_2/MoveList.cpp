@@ -10,12 +10,12 @@
 
 namespace Board
 {
-	uint8_t MVV_LVA(Board &board, ESquare from, ESquare to);
+	uint8_t MVV_LVA(const Board &board, ESquare from, ESquare to);
 
-	// Constructor
-	MoveList::MoveList(Board &board)
+	// Constructor9
+	MoveList::MoveList(const Board &board) : m_board(board)
 	{
-		m_board = board;
+		//m_board = board;
 		m_listLength = 0;
 	}
 
@@ -41,7 +41,7 @@ namespace Board
 	}
 
 	// Add move to the MoveList data structure
-	void MoveList::AddMove(Move &move)
+	void MoveList::AddMove(Move move)
 	{
 		assert(m_listLength < MAXMOVES);
 
@@ -75,7 +75,7 @@ namespace Board
 		}
 	}
 
-	void MoveList::Serialize_Pawns(bitboard_t moves, int diff, MoveFlags flag)
+	void MoveList::Serialize_Pawns(bitboard_t moves, int diff, EMoveFlag flag)
 	{
 		while (moves != 0)
 		{
@@ -87,7 +87,7 @@ namespace Board
 		}
 	}
 
-	uint8_t MVV_LVA(Board &board, ESquare from, ESquare to)
+	uint8_t MVV_LVA(const Board &board, ESquare from, ESquare to)
 	{
 		int score = KING + GetType(board.PieceAt(to)) - GetType(board.PieceAt(from));
 		assert(score >= 0 && score <= 255);

@@ -23,12 +23,12 @@
 
 namespace Board
 {
-	Move::Move(ESquare from, ESquare to, MoveFlags flags, EPiece captured)
+	Move::Move(ESquare from, ESquare to, EMoveFlag flags, EPiece captured)
 	{
 		m_move = (flags << flags_shift) | (captured << captured_shift) | (to << to_shift) | (from << from_shift);
 	}
 
-	Move::Move(ESquare from, ESquare to, MoveFlags flags, EPiece captured, uint8_t score)
+	Move::Move(ESquare from, ESquare to, EMoveFlag flags, EPiece captured, uint8_t score)
 	{
 		m_move = (flags << flags_shift) | (captured << captured_shift) | (to << to_shift) | (from << from_shift) | (score << score_shift);
 	}
@@ -37,44 +37,6 @@ namespace Board
 	{
 		m_move = 0;
 	}
-
-	//Move::Move(std::string &lfAlgebra, Board::Board &board)
-	//{
-	//	m_move = 0;
-	//	int toCol = lfAlgebra[2] - 'a';
-	//	int toRow = lfAlgebra[3] - '1';
-	//	m_move |= (uint32_t)(fromRow * 8 + fromCol) << from_shift;
-	//	m_move |= (uint32_t)(toRow * 8 + toCol) << to_shift;
-	//	m_move |= NO_FLAGS << flags_shift;
-	//	m_move |= EMPTY << captured_shift;
-
-	//	//if ((board.PieceAt(m_from) & 0xFE) == PAWN) // Check for promotion
-	//	//{
-	//	//	if (lfAlgebra[4] == 'q')
-	//	//		m_flags |= QUEEN_PROMOTION;
-	//	//	else if (lfAlgebra[4] == 'r')
-	//	//		m_flags |= ROOK_PROMOTION;
-	//	//	else if (lfAlgebra[4] == 'b')
-	//	//		m_flags |= BISHOP_PROMOTION;
-	//	//	else if (lfAlgebra[4] == 'n')
-	//	//		m_flags |= KNIGHT_PROMOTION;
-	//	//}
-	//	if (board.PieceAt(GetFrom()) == B_KING)
-	//	{
-	//		if ((GetTo() - GetFrom()) == 2)
-	//			m_move |= CASTLE << flags_shift;
-	//		else if (GetFrom() - GetTo() == 2)
-	//			m_move |= CASTLE << flags_shift;
-	//	}
-	//	else if (board.PieceAt(GetFrom()) == (W_KING))
-	//	{
-	//		if ((GetTo() - GetFrom()) == 2)
-	//			m_move |= CASTLE << flags_shift;
-	//		else if (GetFrom() - GetTo() == 2)
-	//			m_move |= CASTLE << flags_shift;
-	//	}
-	//	std::cout << ToString();
-	//}
 
 	std::string Move::ToString()
 	{

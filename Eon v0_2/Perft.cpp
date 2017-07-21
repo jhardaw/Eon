@@ -25,7 +25,9 @@ uint64_t Perft_PseudoLegal(Board::Board &board, int depth)
 	for (int ii = 0; ii < moveList.GetLength(); ii++)
 	{
 		Board::Move move = moveList.GetMove(ii);
+		//std::cout << "Before Move: " << move.ToString() << board.ToString();
 		board.MakeMove(move);
+		//std:cout << "After Move" << board.ToString();
 		assert(board.Validate());
 		if (!inCheck(board, !board.GetPlayersTurn()))
 			nodes += Perft_PseudoLegal(board, depth - 1);
@@ -122,6 +124,7 @@ void Perft_Test(void)
 
 				cout << "Loading FEN: " << fen << endl;
 				board.ParseFEN(fen);
+				cout << board.ToString();
 				cout << "\tDepth: " << depth << endl;
 				cout << "\tAnswer: " << answer << endl;
 

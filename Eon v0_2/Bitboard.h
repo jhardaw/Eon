@@ -3,7 +3,7 @@
 
 namespace Board
 {
-	extern uint64_t bitAt[65];
+	extern const uint64_t bitAt[65];
 
 	typedef uint64_t bitboard_t;
 	const bitboard_t BITBOARD_EMPTY = 0ULL;
@@ -25,8 +25,6 @@ namespace Board
 	const bitboard_t FILE_F = 0x2020202020202020ULL;
 	const bitboard_t FILE_G = 0x4040404040404040ULL;
 	const bitboard_t FILE_H = 0x8080808080808080ULL;
-
-	void Bitboard_Init();
 
 	int bit_scan_forward(bitboard_t bboard);
 	bitboard_t circular_shift(bitboard_t num, int shift);

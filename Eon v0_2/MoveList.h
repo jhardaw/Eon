@@ -8,17 +8,17 @@ namespace Board
 	class MoveList
 	{
 	public:
-		MoveList(Board &board);
+		MoveList(const Board &board);
 		Move GetMove(int index);
-		void AddMove(Move &move);
+		void AddMove(Move move);
 		void RemoveMove(int index);
 		int GetLength();
 		void MoveList::Serialize(ESquare from, bitboard_t moves);
-		void MoveList::Serialize_Pawns(bitboard_t moves, int diff, MoveFlags flag);
+		void MoveList::Serialize_Pawns(bitboard_t moves, int diff, EMoveFlag flag);
 		std::string ToString();
 
 		/** Properties **/
-		Board m_board;
+		const Board& m_board;
 		Move m_list[MAXMOVES];
 		int m_listLength;
 	};

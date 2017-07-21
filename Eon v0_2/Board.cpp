@@ -15,13 +15,33 @@
 #include "Evaluate.h"
 #include "Perft.h"
 
-uint64_t bitAt[65];
+//uint64_t bitAt[65];
 
 namespace Board
 {
+	ECastleRight update_rights[64];
+
 	Board::Board(void)
 	{
 		Clear();
+
+		for (ESquare sqr = A1; sqr <= H8; sqr++)
+		{
+			if (sqr == E1)
+				update_rights[sqr] = ~CASTLE_WHITE_KING & ~CASTLE_WHITE_QUEEN;
+			else if (sqr == E8)
+				update_rights[sqr] = ~CASTLE_BLACK_KING & ~CASTLE_BLACK_QUEEN;
+			else if (sqr == H8)
+				update_rights[sqr] = ~CASTLE_BLACK_KING;
+			else if (sqr == A8)
+				update_rights[sqr] = ~CASTLE_BLACK_QUEEN;
+			else if (sqr == H1)
+				update_rights[sqr] = ~CASTLE_WHITE_KING;
+			else if (sqr == A1)
+				update_rights[sqr] = ~CASTLE_WHITE_QUEEN;
+			else
+				update_rights[sqr] = ~CASTLE_NONE;
+		}
 	}
 
 	void Board::Clear()
@@ -42,136 +62,130 @@ namespace Board
 		m_castling_rights = CASTLE_NONE;
 		m_ep_square = EP_NULL;
 		m_ToMove = WHITE;
-		UndoStack = std::vector<UndoHelper>();
+		//m_StackIndex = 0;
 	}
 
 	int numMakeMoves = 0;
-	void Board::MakeMove(Move &move)
+	void Board::MakeMove(Move move)
 	{
 		numMakeMoves++;
-		//assert(move.Validate(*this));
+		
+		// store undo info
 		UndoStack.push_back(UndoHelper(m_half_move_count, m_castling_rights, m_ep_square));
-		EPiece piece = RemovePiece(move.GetFrom());
-		RemovePiece(move.GetTo());
-		SetPiece(piece, move.GetTo());
+		/*m_UndoStack[m_StackIndex++].half_move_count = m_half_move_count;
+		m_UndoStack[m_StackIndex].castling_rights = m_castling_rights;
+		m_UndoStack[m_StackIndex].ep_square = m_ep_square;*/
+		
+		// init
+		EColor me = m_ToMove;
+		EColor opp = !m_ToMove;
+		ESquare from = move.GetFrom();
+		ESquare to = move.GetTo();
+		EPiece captured = move.GetCaptured();
+		EPiece piece = PieceAt(from);
+		EMoveFlag flag = move.GetFlags();
+		assert(GetColor(piece) == me);
+		assert(piece >= W_PAWN && piece <= B_KING);
+
+		// update turn
+		m_ToMove = opp;
+
+		// update castling rights
+		m_castling_rights &= update_rights[from] & update_rights[to];
+
+		// update en passant
 		m_ep_square = EP_NULL;
 
-		if (move.GetFlags() == PAWN_DOUBLE_PUSH)
+		// update move number (handle captures later)
+		m_half_move_count++;
+		if (GetType(piece) == PAWN)
+			m_half_move_count = 0; // reset clock
+
+		// remove captured piece
+		if (captured != EMPTY)
 		{
-			// Possible En Passant capture in next ply
-			if (m_ToMove == WHITE)
-				m_ep_square = move.GetFrom() + 8;
-			else
-				m_ep_square = move.GetFrom() - 8;
+			assert(GetColor(captured) == opp);
+			assert(captured >= W_PAWN && captured <= B_KING);
+			RemovePiece(to);
+			m_half_move_count = 0; // reset clock
 		}
-		else if (move.GetFlags() == EP_CAPTURE)
+
+		// move the piece
+		RemovePiece(from);
+		SetPiece(piece, to);
+
+		if (flag == PAWN_DOUBLE_PUSH)
 		{
-			// Remove Pawn captured En Passant
-			if (m_ToMove == WHITE)
-				RemovePiece(move.GetTo() - 8);
-			else
-				RemovePiece(move.GetTo() + 8);
+			m_ep_square = from + 8 - me * 16;
 		}
-		else if (move.GetFlags() == QUEEN_PROMOTION)
+		else if (isPromotion(move.GetFlags()))
 		{
-			// Replace Pawn with Queen
-			RemovePiece(move.GetTo());
-			SetPiece(m_ToMove | QUEEN, move.GetTo());
+			RemovePiece(to);
+			EPiece promoted = PromoteType(flag, me);
+			SetPiece(promoted, to);
 		}
-		else if (move.GetFlags() == ROOK_PROMOTION)
+		else if (flag == EP_CAPTURE)
 		{
-			// Replace Pawn with Rook
-			RemovePiece(move.GetTo());
-			SetPiece(m_ToMove | ROOK, move.GetTo());
+			ESquare sqr = to - 8 + me * 16;
+			RemovePiece(sqr);
 		}
-		else if (move.GetFlags() == BISHOP_PROMOTION)
+		else if (flag == CASTLE) // Move the rook
 		{
-			// Replace Pawn with Bishop
-			RemovePiece(move.GetTo());
-			SetPiece(m_ToMove | BISHOP, move.GetTo());
-		}
-		else if (move.GetFlags() == KNIGHT_PROMOTION)
-		{
-			// Replace Pawn with Knight
-			RemovePiece(move.GetTo());
-			SetPiece(m_ToMove | KNIGHT, move.GetTo());
-		}
-		else if (move.GetFlags() == CASTLE)
-		{
-			// Move the Rook
-			if (move.GetTo() > move.GetFrom())  // kingside castle
+			if (to > from)  // kingside castle
 			{
-				EPiece rook = RemovePiece(move.GetTo() + 1);
-				SetPiece(rook, move.GetTo() - 1);
+				EPiece rook = RemovePiece(to + 1);
+				assert(rook == (me | ROOK));
+				SetPiece(rook, to - 1);
 			}
 			else // queenside castle
 			{
-				EPiece rook = RemovePiece(move.GetTo() - 2);
-				SetPiece(rook, move.GetTo() + 1);
+				EPiece rook = RemovePiece(to - 2);
+				assert(rook == (me | ROOK));
+				SetPiece(rook, to + 1);
 			}
-
-			// Update castling rights
-			if (m_ToMove == WHITE)
-				m_castling_rights &= ~WHITE_KING & ~WHITE_QUEEN;
-			else
-				m_castling_rights &= ~BLACK_KING & ~BLACK_QUEEN;
 		}
-
-		if (m_castling_rights)
-		{
-			if (move.GetFrom() == E1)
-				m_castling_rights &= ~WHITE_KING & ~WHITE_QUEEN;
-			else if (move.GetFrom() == E8)
-				m_castling_rights &= ~BLACK_KING & ~BLACK_QUEEN;
-
-			if (move.GetFrom() == H8 || move.GetTo() == H8)
-				m_castling_rights &= ~BLACK_KING;
-			else if (move.GetFrom() == A8 || move.GetTo() == A8)
-				m_castling_rights &= ~BLACK_QUEEN;
-
-			if (move.GetFrom() == H1 || move.GetTo() == H1)
-				m_castling_rights &= ~WHITE_KING;
-			else if (move.GetFrom() == A1 || move.GetTo() == A1)
-				m_castling_rights &= ~WHITE_QUEEN;
-		}
-
-		m_half_move_count += 1;
-		m_ToMove = !m_ToMove;
 	}
 
-	void Board::UnmakeMove(Move &move)
+	void Board::UnmakeMove(Move move)
 	{
+		// Retrieve saved info
+		/*m_half_move_count = m_UndoStack[m_StackIndex].half_move_count;
+		m_castling_rights = m_UndoStack[m_StackIndex].castling_rights;
+		m_ep_square = m_UndoStack[m_StackIndex--].ep_square;*/
 		UndoHelper irreversible = UndoStack.back();
 		m_half_move_count = irreversible.GetHalfMoveCount();
 		m_castling_rights = irreversible.GetCastlingRights();
 		m_ep_square = irreversible.GetEPSquare();
 		UndoStack.pop_back();
-		EPiece piece = RemovePiece(move.GetTo());
-		SetPiece(piece, move.GetFrom());
-		SetPiece(move.GetCaptured(), move.GetTo());
-		m_ToMove = !m_ToMove;
 
-		if (move.GetFlags() == EP_CAPTURE)
+		// init
+		EColor opp = m_ToMove;
+		EColor me = !m_ToMove;
+		ESquare from = move.GetFrom();
+		ESquare to = move.GetTo();
+		EMoveFlag flag = move.GetFlags();
+		EPiece piece = PieceAt(to);
+		assert(GetColor(piece) == me);
+		assert(piece >= W_PAWN && piece <= B_KING);
+
+		RemovePiece(to);
+		SetPiece(piece, from);
+		if (move.GetCaptured() != EMPTY)
+			SetPiece(move.GetCaptured(), move.GetTo());
+
+		m_ToMove = me;
+
+		if (flag == EP_CAPTURE)	// Replace Pawn captured during En Passant
 		{
-			// Replace Pawn captured during En Passant
-			if (m_ToMove == WHITE)
-			{
-				SetPiece((BLACK | PAWN), move.GetTo() - 8);
-			}
-			else
-			{
-				SetPiece((WHITE | PAWN), move.GetTo() + 8);
-			}
+			SetPiece((opp | PAWN), to - 8 + me * 16);
 		}
-		else if (move.GetFlags() == KNIGHT_PROMOTION || move.GetFlags() == BISHOP_PROMOTION || move.GetFlags() == ROOK_PROMOTION || move.GetFlags() == QUEEN_PROMOTION)
+		else if (isPromotion(flag)) // Replace promoted piece with Pawn
 		{
-			// Replace promoted piece with Pawn
-			RemovePiece(move.GetFrom());
-			SetPiece(m_ToMove | PAWN, move.GetFrom());
+			RemovePiece(from);
+			SetPiece(me | PAWN, from);
 		}
-		else if (move.GetFlags() == CASTLE)
+		else if (flag == CASTLE) // Move the Rook
 		{
-			// Move the Rook
 			if (move.GetTo() > move.GetFrom())  // kingside castle
 			{
 				EPiece rook = RemovePiece(move.GetTo() - 1);
@@ -207,11 +221,11 @@ namespace Board
 			}
 			else
 			{
-				for (int piece = 0; piece < 14; piece++)
+				for (EPiece piece = W_PAWN; piece <= B_KING; piece++)
 				{
 					if (chr == PIECENAMES[piece])
 					{
-						SetPiece(static_cast<EPiece>(piece), static_cast<ESquare>(row * 8 + col));
+						SetPiece(piece, static_cast<ESquare>(row * 8 + col));
 					}
 				}
 				col += 1;
@@ -226,13 +240,13 @@ namespace Board
 
 		// set castling rights
 		if (tokens[2].find("K") != std::string::npos)
-			m_castling_rights |= WHITE_KING;
+			m_castling_rights |= CASTLE_WHITE_KING;
 		if (tokens[2].find("Q") != std::string::npos)
-			m_castling_rights |= WHITE_QUEEN;
+			m_castling_rights |= CASTLE_WHITE_QUEEN;
 		if (tokens[2].find("k") != std::string::npos)
-			m_castling_rights |= BLACK_KING;
+			m_castling_rights |= CASTLE_BLACK_KING;
 		if (tokens[2].find("q") != std::string::npos)
-			m_castling_rights |= BLACK_QUEEN;
+			m_castling_rights |= CASTLE_BLACK_QUEEN;
 
 		// set ep square
 		if (tokens.size() >= 4)
@@ -291,12 +305,12 @@ namespace Board
 
 		if (EvaluateFast(*this) != Evaluate(*this))
 		{
-			std::cout << ToString();
+			std::cout <<"Eval doesn't match\n" << ToString();
 			return false;
 		}
 
-		if (GetZorbist() != ZorbistKey(*this))
-			return false;
+		/*if (GetZorbist() != ZorbistKey(*this))
+			return false;*/
 
 		return true;
 	}
@@ -326,7 +340,7 @@ namespace Board
 		return m_half_move_count;
 	}
 
-	ECastleRights Board::GetCastlingRights() const
+	ECastleRight Board::GetCastlingRights() const
 	{
 		return m_castling_rights;
 	}
@@ -346,32 +360,37 @@ namespace Board
 		return m_Zorbist;
 	}
 
-	inline void Board::SetPiece(EPiece piece, ESquare sqr)
+	void Board::SetPiece(EPiece piece, ESquare sqr)
 	{
-		if (piece != EMPTY)
-		{
+			assert(piece >= W_PAWN && piece <= B_KING);
+			assert(sqr >= A1 && sqr <= H8);
 			m_board_array[sqr] = piece;
 			m_bitboards[piece] |= bitAt[sqr];
 			m_bitboards[GetColor(piece)] |= bitAt[sqr];
-			Zorbist_SetPiece(m_Zorbist, piece, sqr);
+			//Zorbist_SetPiece(m_Zorbist, piece, sqr);
 			Eval_SetPiece(m_Eval, piece, sqr);
-		}
 	}
 
-	inline EPiece Board::RemovePiece(ESquare sqr)
+	EPiece Board::RemovePiece(ESquare sqr)
 	{
+		assert(sqr >= A1 && sqr <= H8);
 		EPiece piece = m_board_array[sqr];
-		if (piece != EMPTY)
-		{
-			m_board_array[sqr] = WHITE|EMPTY; // like mentioned above, this is a hack for now
-			m_bitboards[piece] &= ~bitAt[sqr];
-			m_bitboards[GetColor(piece)] &= ~bitAt[sqr];
-			Zorbist_RemovePiece(m_Zorbist, piece, sqr);
-			Eval_RemovePiece(m_Eval, piece, sqr);
-		}
+		assert(piece >= W_PAWN && piece <= B_KING);
+		m_board_array[sqr] = WHITE|EMPTY; // like mentioned above, this is a hack for now
+		m_bitboards[piece] &= ~bitAt[sqr];
+		m_bitboards[GetColor(piece)] &= ~bitAt[sqr];
+		//Zorbist_RemovePiece(m_Zorbist, piece, sqr);
+		Eval_RemovePiece(m_Eval, piece, sqr);
 
 		return piece;
 	}
+
+	/*void Board::MovePiece(ESquare from, ESquare to)
+	{
+		assert(from >= A1 && from <= H8);
+		assert(to >= A1 && to <= H8);
+		EPiece piece = m_board_array[from];
+	}*/
 
 	std::string Board::ToString()
 	{
@@ -398,20 +417,20 @@ namespace Board
 			if (row == 6)
 			{
 				asciiBoard += "\tCastling: ";
-				if (m_castling_rights & WHITE_KING)
+				if (m_castling_rights & CASTLE_WHITE_KING)
 					asciiBoard += "K";
-				if (m_castling_rights & WHITE_QUEEN)
+				if (m_castling_rights & CASTLE_WHITE_QUEEN)
 					asciiBoard += "Q";
-				if (m_castling_rights & BLACK_KING)
+				if (m_castling_rights & CASTLE_BLACK_KING)
 					asciiBoard += "k";
-				if (m_castling_rights & BLACK_QUEEN)
+				if (m_castling_rights & CASTLE_BLACK_QUEEN)
 					asciiBoard += "q";
 
 				asciiBoard += "\tEP Square: ";
 				if (m_ep_square == EP_NULL)
 					asciiBoard += "-";
 				else
-					asciiBoard += m_ep_square;
+					asciiBoard += std::to_string(m_ep_square);
 			}
 			if (row == 5)
 			{
@@ -437,7 +456,7 @@ namespace Board
 		return asciiBoard;
 	}
 
-	UndoHelper::UndoHelper(uint8_t half_move_count, ECastleRights castling_rights, ESquare ep_square)
+	UndoHelper::UndoHelper(uint8_t half_move_count, ECastleRight castling_rights, ESquare ep_square)
 	{
 		m_half_move_count = half_move_count;
 		m_castling_rights = castling_rights;
@@ -449,7 +468,7 @@ namespace Board
 		return m_half_move_count;
 	}
 
-	ECastleRights UndoHelper::GetCastlingRights()
+	ECastleRight UndoHelper::GetCastlingRights()
 	{
 		return m_castling_rights;
 	}

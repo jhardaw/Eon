@@ -8,7 +8,6 @@
  
 #include <stdint.h>
 #include <string>
-//#include "Board.h"
 
 namespace Board
 {
@@ -70,17 +69,27 @@ namespace Board
 	}
 
 	// Move flags
-	enum MoveFlags : uint8_t {
+	enum EMoveFlag : uint8_t {
 		NO_FLAGS,
 		PAWN_DOUBLE_PUSH,
 		EP_CAPTURE,
 		CASTLE,
-		QUEEN_PROMOTION,
-		ROOK_PROMOTION,
+		KNIGHT_PROMOTION,
 		BISHOP_PROMOTION,
-		KNIGHT_PROMOTION
+		ROOK_PROMOTION,
+		QUEEN_PROMOTION
 	};
 
+	inline bool isPromotion(const EMoveFlag flag)
+	{
+		return flag > CASTLE;
+	}
+
+	inline EPiece PromoteType(const EMoveFlag flag, EColor color)
+	{
+		return color | static_cast<EPieceType>(flag - 2);
+	}
+	
 	const int from_shift = 0;
 	const int to_shift = 6;
 	const int captured_shift = 12;
@@ -95,8 +104,8 @@ namespace Board
 	class Move
 	{
 	public:
-		Move(ESquare from, ESquare to, MoveFlags flags, EPiece captured, uint8_t score);
-		Move(ESquare from, ESquare to, MoveFlags flags, EPiece captured);
+		Move(ESquare from, ESquare to, EMoveFlag flags, EPiece captured, uint8_t score);
+		Move(ESquare from, ESquare to, EMoveFlag flags, EPiece captured);
 		Move();
 		ESquare GetFrom()
 		{
@@ -106,9 +115,9 @@ namespace Board
 		{
 			return static_cast<ESquare>((m_move >> to_shift) & to_mask);
 		}
-		MoveFlags GetFlags()
+		EMoveFlag GetFlags()
 		{
-			return static_cast<MoveFlags>((m_move >> flags_shift) & flags_mask);
+			return static_cast<EMoveFlag>((m_move >> flags_shift) & flags_mask);
 		}
 		EPiece GetCaptured()
 		{

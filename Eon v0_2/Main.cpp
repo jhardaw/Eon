@@ -1,6 +1,7 @@
 #include "Search.h"
 #include "Board.h"
 #include "UCI.h"
+#include "Perft.h"
 
 //#define _CRTDBG_MAP_ALLOC  
 //#include <stdlib.h>  
@@ -15,5 +16,7 @@ int main(int argc, char **argv)
 	UCI::UCI eon = UCI::UCI();
 	eon.Start();
 	
+	//Perft_Test();
+
 	return 0;
 }
