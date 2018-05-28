@@ -24,7 +24,7 @@ uint64_t Perft_PseudoLegal(Board::Board &board, int depth)
 
 	for (int ii = 0; ii < moveList.GetLength(); ii++)
 	{
-		Board::Move move = moveList.GetMove(ii);
+		Board::Move move = moveList.GetUnorderedMove(ii);
 		//std::cout << "Before Move: " << move.ToString() << board.ToString();
 		board.MakeMove(move);
 		//std:cout << "After Move" << board.ToString();
@@ -54,7 +54,7 @@ uint64_t Perft_Legal(Board::Board &board, int depth)
 	
 	for (int ii = 0; ii < moveList.GetLength(); ii++)
 	{
-		Board::Move move = moveList.GetMove(ii);
+		Board::Move move = moveList.GetUnorderedMove(ii);
 		board.MakeMove(move);
 		assert(board.Validate());
 		nodes += Perft_Legal(board, depth-1);
@@ -72,7 +72,7 @@ void Divide(Board::Board &board, int depth)
 	uint64_t nodes = 0;
 	for (int ii = 0; ii < moveList.GetLength(); ii++)
 	{
-		Board::Move move = moveList.GetMove(ii);
+		Board::Move move = moveList.GetOrderedMove(ii);
 		board.MakeMove(move);
 		assert(board.Validate());
 		uint64_t subNodes = Perft_Legal(board, depth - 1);
@@ -129,7 +129,7 @@ void Perft_Test(void)
 				cout << "\tAnswer: " << answer << endl;
 
 				clock_t startTime = clock();
-				uint64_t nodes = Perft_PseudoLegal(board, depth);
+				uint64_t nodes = Perft_Legal(board, depth);
 				cout << "\tNodes: " << nodes << endl;
 				if (nodes != answer)
 				{

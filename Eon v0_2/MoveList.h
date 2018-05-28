@@ -9,7 +9,8 @@ namespace Board
 	{
 	public:
 		MoveList(const Board &board);
-		Move GetMove(int index);
+		Move GetOrderedMove(int index);
+		Move GetUnorderedMove(int index);
 		void AddMove(Move move);
 		void RemoveMove(int index);
 		int GetLength();

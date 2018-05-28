@@ -179,7 +179,7 @@ namespace Board
 		EColor toMove = board.GetPlayersTurn();
 		for (int ii = 0; ii < list.GetLength(); ii++)
 		{
-			Move move = list.GetMove(ii);
+			Move move = list.GetUnorderedMove(ii);
 			board.MakeMove(move);
 			if (inCheck(board, toMove))
 			{
@@ -272,7 +272,7 @@ namespace Board
 		{
 			ESquare from = static_cast<ESquare>(bit_scan_forward(king));
 			bitboard_t moves = king_moves(from) & ~friendly;
-			list.Serialize(from, moves);			
+			list.Serialize(from, moves);
 		}
 	}
 

@@ -12,15 +12,14 @@ namespace Board
 {
 	uint8_t MVV_LVA(const Board &board, ESquare from, ESquare to);
 
-	// Constructor9
+	// Constructor
 	MoveList::MoveList(const Board &board) : m_board(board)
 	{
-		//m_board = board;
 		m_listLength = 0;
 	}
 
 	// Selection sort for retreiving moves from list
-	Move MoveList::GetMove(int index)
+	Move MoveList::GetOrderedMove(int index)
 	{
 		assert(index >= 0 && index < m_listLength);
 
@@ -37,6 +36,12 @@ namespace Board
 		m_list[index] = m_list[max];
 		m_list[max] = temp;
 
+		return m_list[index];
+	}
+
+	Move MoveList::GetUnorderedMove(int index)
+	{
+		assert(index >= 0 && index < m_listLength);
 		return m_list[index];
 	}
 

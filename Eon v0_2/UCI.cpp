@@ -15,11 +15,12 @@
 #define REVISION 2
 #define MAXLINE 100
 
-#define MOVES_REMAINING 30
+#define MOVES_REMAINING 20
 
 namespace UCI
 {
 	EEngineState g_engineState;
+	std::string startpos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 	EEngineState GetEngineState()
 	{
@@ -158,9 +159,9 @@ namespace UCI
 	void UCI::inputIsReady(void)
 	{
 		Board::MoveGen_Init();
-		Evaluate_Init();
+		Eval::Evaluate_Init();
 		//TranspoTable_Init();
-		m_board->ParseFEN(std::string("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+		m_board->ParseFEN(startpos);
 		std::cout << "readyok" << std::endl;
 	}
 
@@ -191,7 +192,7 @@ namespace UCI
 		}
 		else if (line.find("startpos") != std::string::npos)
 		{
-			m_board->ParseFEN(std::string("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+			m_board->ParseFEN(startpos);
 		}
 
 		if (line.find("moves") != std::string::npos)
@@ -206,7 +207,7 @@ namespace UCI
 				Board::GenerateLegalMoves(*m_board, list);
 				for (int jj = 0; jj < list.GetLength(); jj++)
 				{
-					Board::Move move = list.GetMove(jj);
+					Board::Move move = list.GetOrderedMove(jj);
 					if (from == move.GetFrom() && to == move.GetTo())
 					{
 						m_board->MakeMove(move);
@@ -295,7 +296,7 @@ namespace UCI
 		else if (m_searchType == TIME_SEARCH)
 		{
 			double totalDelta = double(clock() - m_startTime) / (double)CLOCKS_PER_SEC * 1000;
-			int bFactor = 8;
+			int bFactor = 4;
 			double plyDelta = double(clock() - m_lastPly) / (double)CLOCKS_PER_SEC * 1000;
 			m_lastPly = clock();
 			if (m_toMove == Board::EColor::WHITE)
@@ -305,7 +306,7 @@ namespace UCI
 			}
 			else
 			{
-				return totalDelta + plyDelta * bFactor > m_wTime / MOVES_REMAINING;
+				return totalDelta + plyDelta * bFactor > m_bTime / MOVES_REMAINING;
 			}
 		}
 		return false;

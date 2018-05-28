@@ -15,8 +15,6 @@
 #include "Evaluate.h"
 #include "Perft.h"
 
-//uint64_t bitAt[65];
-
 namespace Board
 {
 	ECastleRight update_rights[64];
@@ -275,7 +273,7 @@ namespace Board
 				m_move_count = std::stoi(tokens[5]);
 		}
 
-		m_Eval = m_ToMove == WHITE ? Evaluate(*this) : -Evaluate(*this);
+		m_Eval = m_ToMove == WHITE ? Eval::Evaluate(*this) : -Eval::Evaluate(*this);
 		m_Zorbist = ZorbistKey(*this);
 	}
 
@@ -303,7 +301,7 @@ namespace Board
 			}
 		}
 
-		if (EvaluateFast(*this) != Evaluate(*this))
+		if (Eval::EvaluateFast(*this) != Eval::Evaluate(*this))
 		{
 			std::cout <<"Eval doesn't match\n" << ToString();
 			return false;
@@ -362,13 +360,13 @@ namespace Board
 
 	void Board::SetPiece(EPiece piece, ESquare sqr)
 	{
-			assert(piece >= W_PAWN && piece <= B_KING);
-			assert(sqr >= A1 && sqr <= H8);
-			m_board_array[sqr] = piece;
-			m_bitboards[piece] |= bitAt[sqr];
-			m_bitboards[GetColor(piece)] |= bitAt[sqr];
-			//Zorbist_SetPiece(m_Zorbist, piece, sqr);
-			Eval_SetPiece(m_Eval, piece, sqr);
+		assert(piece >= W_PAWN && piece <= B_KING);
+		assert(sqr >= A1 && sqr <= H8);
+		m_board_array[sqr] = piece;
+		m_bitboards[piece] |= bitAt[sqr];
+		m_bitboards[GetColor(piece)] |= bitAt[sqr];
+		//Zorbist_SetPiece(m_Zorbist, piece, sqr);
+		Eval::Eval_SetPiece(m_Eval, piece, sqr);
 	}
 
 	EPiece Board::RemovePiece(ESquare sqr)
@@ -380,7 +378,7 @@ namespace Board
 		m_bitboards[piece] &= ~bitAt[sqr];
 		m_bitboards[GetColor(piece)] &= ~bitAt[sqr];
 		//Zorbist_RemovePiece(m_Zorbist, piece, sqr);
-		Eval_RemovePiece(m_Eval, piece, sqr);
+		Eval::Eval_RemovePiece(m_Eval, piece, sqr);
 
 		return piece;
 	}
@@ -439,7 +437,7 @@ namespace Board
 			}
 			if (row == 4)
 			{
-				asciiBoard += "\tEval: " + std::to_string(EvaluateFast(*this)) + "  (" + std::to_string(Evaluate(*this)) + ")";
+				asciiBoard += "\tEval: " + std::to_string(Eval::EvaluateFast(*this)) + "  (" + std::to_string(Eval::Evaluate(*this)) + ")";
 			}
 			if (row == 3)
 			{

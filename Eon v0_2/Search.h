@@ -2,21 +2,6 @@
 
 #include "Board.h"
 #include "UCI.h"
-//#include "MoveGen.h"
-//
-//class Search
-//{
-//	public:
-//		Search(Board& board);
-//		Move BestMove();
-//		
-//	private:
-//		int AlphaBeta(int alpha, int beta, int depth);
-//		
-//		// Properties
-//		Board m_board;
-//		MoveGen m_moveGen;
-//};
 
 namespace Search
 {

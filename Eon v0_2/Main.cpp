@@ -15,8 +15,6 @@ int main(int argc, char **argv)
 
 	UCI::UCI eon = UCI::UCI();
 	eon.Start();
-	
-	//Perft_Test();
 
 	return 0;
 }
